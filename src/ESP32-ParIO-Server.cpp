@@ -10,32 +10,10 @@ ParIOServer::~ParIOServer()
 {
 }
 
-static void IRAM_ATTR ISR()
-{
-
-    delayMicroseconds(20);
-
-    byte Char;
-
-    Char = digitalRead(D0) +
-           (digitalRead(D1) << 1) +
-           (digitalRead(D2) << 2) +
-           (digitalRead(D3) << 3) +
-           (digitalRead(D4) << 4) +
-           (digitalRead(D5) << 5) +
-           (digitalRead(D6) << 6) +
-           (digitalRead(D7) << 7);
-
-    Serial1.print((char)Char);
-
-    digitalWrite(ACK_n, LOW);
-    digitalWrite(ACK_n, HIGH);
-}
-
 void ParIOServer::setup()
 {
     // Configure pins
-    pinMode(STROBE_n, INPUT_PULLUP); // Input only
+    pinMode(STROBE_n, INPUT_PULLUP); // Input only, not used
     pinMode(D0, INPUT_PULLUP);
     pinMode(D1, INPUT_PULLUP);
     pinMode(D2, INPUT_PULLUP);
@@ -45,17 +23,35 @@ void ParIOServer::setup()
     pinMode(D6, INPUT_PULLUP);
     pinMode(D7, INPUT_PULLUP);
     pinMode(ACK_n, OUTPUT);
-    pinMode(POUT, INPUT_PULLUP); // Input only
-    pinMode(BUSY, OUTPUT);
     pinMode(SEL, INPUT_PULLUP);
+    digitalWrite(ACK_n, HIGH); // Not used
 
-    attachInterrupt(POUT, ISR, FALLING);
+    gpio_config_t io_conf;
 
-    digitalWrite(ACK_n, HIGH);
-    digitalWrite(BUSY, LOW);
+    io_conf.intr_type = GPIO_INTR_DISABLE; // Disable GPIO interrupt
+    io_conf.mode = GPIO_MODE_OUTPUT;       // Set as output mode
+    io_conf.pin_bit_mask = (1ULL << BUSY);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
 
-    // digitalWrite(ACT_LED, LOW);
-    // state = READY;
+    io_conf.pin_bit_mask = (1ULL << POUT);
+    io_conf.intr_type = GPIO_INTR_NEGEDGE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config(&io_conf);
+
+    gpio_set_level(GPIO_NUM_33, 1); // Set BUSY to high level
+
+    int INTR_NUM = 31; // extern level 5, see table in file soc.h for details
+
+    ESP_INTR_DISABLE(INTR_NUM);
+    intr_matrix_set(xPortGetCoreID(), ETS_GPIO_INTR_SOURCE, INTR_NUM);
+    ESP_INTR_ENABLE(INTR_NUM);
+
+    Serial.print("Level 5 Interrupt set on core ");
+    Serial.println(xPortGetCoreID());
 }
 
 void ParIOServer::handle()
