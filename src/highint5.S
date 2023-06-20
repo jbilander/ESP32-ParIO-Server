@@ -7,7 +7,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/dport_reg.h"
 
-#define L5_INTR_STACK_SIZE  12
+#define L5_INTR_STACK_SIZE 12
 #define LX_INTR_A15_OFFSET 0
 #define LX_INTR_A14_OFFSET 4
 #define LX_INTR_A13_OFFSET 8
@@ -22,7 +22,7 @@ _l5_intr_stack:
     .align      4
 xt_highint5:
 
-	movi    a0, _l5_intr_stack // assuming a0 saved restored by EXCSAVE_5 at the end of this
+    movi    a0, _l5_intr_stack // assuming a0 saved restored by EXCSAVE_5 at the end of this
     s32i    a15, a0, LX_INTR_A15_OFFSET
     s32i    a14, a0, LX_INTR_A14_OFFSET
     s32i    a13, a0, LX_INTR_A13_OFFSET
@@ -38,11 +38,11 @@ xt_highint5:
     movi    a13, GPIO_OUT1_W1TC_REG
     movi    a14, GPIO_OUT1_W1TS_REG
     movi    a15, (1 << 1)
-    s32i	a15, a13, 0
-    s32i	a15, a14, 0
+    s32i    a15, a13, 0
+    s32i    a15, a14, 0
 
 
-   	l32i    a15, a0, LX_INTR_A15_OFFSET
+    l32i    a15, a0, LX_INTR_A15_OFFSET
     l32i    a14, a0, LX_INTR_A14_OFFSET
     l32i    a13, a0, LX_INTR_A13_OFFSET
 
